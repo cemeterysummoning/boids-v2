@@ -2,6 +2,7 @@
 #define BOID_VIEWER_APP_H_
 
 #include "gloo/Application.hpp"
+#include "FlockNode.hpp"
 
 namespace GLOO {
 class BoidApp : public Application {
@@ -14,6 +15,7 @@ class BoidApp : public Application {
 
     private:
         std::vector<float> slider_values_;
+        FlockNode* flock_ptr_;
 };
 }  // namespace GLOO
 
