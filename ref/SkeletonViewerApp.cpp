@@ -15,7 +15,7 @@
 
 
 namespace {
-const std::vector<std::string> kJointNames = {"Root",
+const std::vector<std::string> parameterNames = {"Root",
                                               "Chest",
                                               "Waist",
                                               "Neck",
@@ -41,7 +41,7 @@ SkeletonViewerApp::SkeletonViewerApp(const std::string& app_name,
                                      glm::ivec2 window_size,
                                      const std::string& model_prefix)
     : Application(app_name, window_size),
-      slider_values_(kJointNames.size(), {0.f, 0.f, 0.f}),
+      slider_values_(parameterNames.size(), {0.f, 0.f, 0.f}),
       model_prefix_(model_prefix) {
 }
 
@@ -80,8 +80,8 @@ void SkeletonViewerApp::SetupScene() {
 void SkeletonViewerApp::DrawGUI() {
   bool modified = false;
   ImGui::Begin("Control Panel");
-  for (size_t i = 0; i < kJointNames.size(); i++) {
-    ImGui::Text("%s", kJointNames[i].c_str());
+  for (size_t i = 0; i < parameterNames.size(); i++) {
+    ImGui::Text("%s", parameterNames[i].c_str());
     ImGui::PushID((int)i);
     modified |= ImGui::SliderFloat("x", &slider_values_[i].rx, -kPi, kPi);
     modified |= ImGui::SliderFloat("y", &slider_values_[i].ry, -kPi, kPi);

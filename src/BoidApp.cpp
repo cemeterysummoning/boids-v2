@@ -18,10 +18,14 @@
 #include "gloo/cameras/ArcBallCameraNode.hpp"
 #include "gloo/debug/PrimitiveFactory.hpp"
 
+namespace {
+    const std::vector<std::string> parameterNames = {"cohesion", "alignment", "visual range"};
+}
+
 namespace GLOO {
 BoidApp::BoidApp(const std::string& app_name,
                                  glm::ivec2 window_size)
-    : Application(app_name, window_size) {
+    : Application(app_name, window_size), slider_values_(parameterNames.size(), 0.f) {
 }
 
 void BoidApp::SetupScene() {
@@ -41,6 +45,19 @@ void BoidApp::SetupScene() {
   root.AddChild(std::move(ambient_node));
 
   std::shared_ptr<PhongShader> shader = std::make_shared<PhongShader>();
+
+}
+
+void BoidApp::DrawGUI() {
+    bool modified = false;
+    ImGui::Begin("Control Panel");
+    for (size_t i = 0; i < parameterNames.size(); i++) {
+        ImGui::Text("%s", parameterNames[i].c_str());
+        ImGui::PushID((int)i);
+        modified |= ImGui::SliderFloat("", &slider_values_[i], -kPi, kPi);
+        ImGui::PopID();
+    }
+    ImGui::End();
 
 }
 
