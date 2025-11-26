@@ -1,7 +1,7 @@
 #include "FlockNode.hpp"
 #include <vector>
 #include "BoidNode.hpp"
-#include <glm/glm.hpp>
+// #include <glm/glm.hpp>
 #include <random>
 
 
@@ -9,20 +9,19 @@ namespace GLOO{
 FlockNode::FlockNode(){
     // Default constructor
     // 50 boids with default parameters and time step size 0.1, normally distributed around (0,0) 
-
-    boids_ = std::vector<BoidNode>();
+    // boids_ is a vector of unique_ptrs; start empty
     time_step_size_ = 0.1f;
     for (int i = 0; i < 50; ++i) {
-        BoidNode b = BoidNode(dist(rng), dist(rng), dist(rng), dist(rng), 0.0f, 0.0f, 1.5f, 5.0f, 3.14f);
-        boids_.push_back(b);
+        boids_.push_back(make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), dist(rng), 0.0f, 0.0f, 1.5f, 5.0f, 3.14f));
     }
 }
 
-std::vector<BoidNode> FlockNode::get_close_boids(const BoidNode& boid) {
-    std::vector<BoidNode> close_boids;
-    for (const BoidNode& other : boids_) {
-        if (&other != &boid) {
-            float distance = glm::length(other.get_position() - boid.get_position());
+std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
+    std::vector<BoidNode*> close_boids;
+    for (const auto& other_ptr : boids_) {
+        BoidNode* other = other_ptr.get();
+        if (other != &boid) {
+            float distance = glm::length(other->get_position() - boid.get_position());
             if (distance < boid.get_close_range()) {
                 close_boids.push_back(other);
             }
@@ -31,12 +30,13 @@ std::vector<BoidNode> FlockNode::get_close_boids(const BoidNode& boid) {
     return close_boids;
 }
 
-std::vector<BoidNode> FlockNode::get_visible_boids(const BoidNode& boid) {
-    std::vector<BoidNode> visible_boids;
-    for (const BoidNode& other : boids_) {
-        if (&other != &boid) {
-            float distance = glm::length(other.get_position() - boid.get_position());
-            float angle = glm::acos(glm::dot(glm::normalize(boid.get_velocity()), glm::normalize(other.get_position() - boid.get_position())));
+std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
+    std::vector<BoidNode*> visible_boids;
+    for (const auto& other_ptr : boids_) {
+        BoidNode* other = other_ptr.get();
+        if (other != &boid) {
+            float distance = glm::length(other->get_position() - boid.get_position());
+            float angle = glm::acos(glm::dot(glm::normalize(boid.get_velocity()), glm::normalize(other->get_position() - boid.get_position())));
             if (distance < boid.get_visible_range() && angle < boid.get_visible_angle() / 2.0f) {
                 visible_boids.push_back(other); 
             }
@@ -53,24 +53,25 @@ void FlockNode::update_flock() {
     float max_speed = 2.0f;
     float max_force = 0.05f;
 
-    for (BoidNode& boid : boids_) {
-        std::vector<BoidNode> visible_boids = get_visible_boids(boid);
-        std::vector<BoidNode> close_boids = get_close_boids(boid);
+    for (auto& boid_ptr : boids_) {
+        BoidNode& boid = *boid_ptr;
+        std::vector<BoidNode*> visible_boids = get_visible_boids(boid);
+        std::vector<BoidNode*> close_boids = get_close_boids(boid);
 
         glm::vec3 steer_separation = glm::vec3(0.f);
         glm::vec3 steer_alignment = glm::vec3(0.f);
         glm::vec3 steer_cohesion = glm::vec3(0.f);
 
         if (!close_boids.empty()) {
-            for (const BoidNode& other : close_boids) {
-                steer_separation += boid.get_position() - other.get_position();
+            for (const BoidNode* other : close_boids) {
+                steer_separation += boid.get_position() - other->get_position();
             }
         }
 
         if (!visible_boids.empty()) {
-            for (const BoidNode& other : visible_boids) {
-                steer_alignment += other.get_velocity();
-                steer_cohesion += other.get_position();
+            for (const BoidNode* other : visible_boids) {
+                steer_alignment += other->get_velocity();
+                steer_cohesion += other->get_position();
             }
             steer_alignment /= static_cast<float>(visible_boids.size());
             steer_cohesion /= static_cast<float>(visible_boids.size());

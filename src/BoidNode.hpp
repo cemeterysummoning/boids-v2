@@ -14,7 +14,7 @@
 
 
 namespace GLOO{
-class BoidNode : SceneNode{
+class BoidNode : public SceneNode{
     public: 
         BoidNode(){
             glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -85,10 +85,6 @@ class BoidNode : SceneNode{
 
         void set_position(const glm::vec3 position){
             this->GetTransform().SetPosition(position);
-        };
-
-        void set_rotation(const glm::quat& rotation) {
-            this->GetTransform().SetRotation(rotation);
         };
 
         void set_velocity(const glm::vec3& vel) {
