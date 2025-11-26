@@ -1,6 +1,7 @@
-#include <glm/glm.hpp>
+// #include <glm/glm.hpp>
 #include "BoidNode.hpp"
 #include <vector>
+#include <memory>
 #include <random>
 #include "gloo/SceneNode.hpp"
 #include "gloo/VertexObject.hpp"
@@ -23,24 +24,24 @@
 
 
 namespace GLOO{
-class FlockNode : SceneNode {
+class FlockNode : public SceneNode {
     public: 
         FlockNode();
-        FlockNode(std::vector<BoidNode> boids, float time_step_size) : boids_{boids}, time_step_size_{time_step_size} {};
-        std::vector<BoidNode> get_boids() const {
+        FlockNode(std::vector<std::unique_ptr<BoidNode>>&& boids, float time_step_size) : boids_{std::move(boids)}, time_step_size_{time_step_size} {};
+        const std::vector<std::unique_ptr<BoidNode>>& get_boids() const {
             return boids_;
         };
-        void add_boid(const BoidNode& boid) {
-            boids_.push_back(boid);
+        void add_boid(std::unique_ptr<BoidNode> boid) {
+            boids_.push_back(std::move(boid));
         };
         void update_flock();
         
     private:
         std::default_random_engine rng{42};  // fixed seed
-        std::vector<BoidNode> boids_;
+        std::vector<std::unique_ptr<BoidNode>> boids_;
         float time_step_size_ = 0.1f;
-        std::vector<BoidNode> get_visible_boids(const BoidNode& boid);
-        std::vector<BoidNode> get_close_boids(const BoidNode& boid);
+        std::vector<BoidNode*> get_visible_boids(const BoidNode& boid);
+        std::vector<BoidNode*> get_close_boids(const BoidNode& boid);
         std::normal_distribution<float> dist{0.0f, 10.0f};
 };
 } // namespace GLOO
