@@ -13,16 +13,11 @@ FlockNode::FlockNode(){
     // 50 boids with default parameters and time step size 0.1, normally distributed around (0,0) 
     // boids_ is a vector of unique_ptrs; start empty
     time_step_size_ = 0.1f;
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < 100; ++i) {
         std::unique_ptr<BoidNode> temp_boid = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, 0.0f, 0.0f, 0.f, 1.5f, 5.0f, 3.14f);
         boids_.push_back(temp_boid.get());
         AddChild(std::move(temp_boid));
     }
-
-    std::shared_ptr<VertexObject> sphere_mesh_ = PrimitiveFactory::CreateSphere(0.015f, 25, 25);
-    std::shared_ptr<ShaderProgram> shader_ = std::make_shared<PhongShader>();
-    std::shared_ptr<Material> mat_ = std::make_shared<Material>(Material::GetDefault());
-
 }
 
 std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {

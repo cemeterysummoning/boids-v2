@@ -39,7 +39,7 @@ void BoidApp::SetupScene() {
     root.AddChild(std::move(camera_node));
 
     auto ambient_light = std::make_shared<AmbientLight>();
-    ambient_light->SetAmbientColor(glm::vec3(0.2f));
+    ambient_light->SetAmbientColor(glm::vec3(0.5f));
     root.CreateComponent<LightComponent>(ambient_light);
 
     auto point_light = std::make_shared<PointLight>();
@@ -48,7 +48,7 @@ void BoidApp::SetupScene() {
     point_light->SetAttenuation(glm::vec3(1.0f, 0.09f, 0.032f));
     auto point_light_node = make_unique<SceneNode>();
     point_light_node->CreateComponent<LightComponent>(point_light);
-    point_light_node->GetTransform().SetPosition(glm::vec3(1.0f, -2.0f, 4.f));
+    point_light_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 10.f));
     root.AddChild(std::move(point_light_node));
 
     std::shared_ptr<PhongShader> shader = std::make_shared<PhongShader>();

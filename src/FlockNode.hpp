@@ -44,7 +44,7 @@ class FlockNode : public SceneNode {
         float time_step_size_ = 0.1f;
         std::vector<BoidNode*> get_visible_boids(const BoidNode& boid);
         std::vector<BoidNode*> get_close_boids(const BoidNode& boid);
-        std::normal_distribution<float> dist{0.0f, 0.05f};
+        std::normal_distribution<float> dist{0.0f, 10.f};
 };
 } // namespace GLOO
 #endif
