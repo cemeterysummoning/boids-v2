@@ -27,22 +27,24 @@ namespace GLOO{
 class FlockNode : public SceneNode {
     public: 
         FlockNode();
-        FlockNode(std::vector<std::unique_ptr<BoidNode>>&& boids, float time_step_size) : boids_{std::move(boids)}, time_step_size_{time_step_size} {};
-        const std::vector<std::unique_ptr<BoidNode>>& get_boids() const {
+        FlockNode(std::vector<BoidNode*>&& boids, float time_step_size) : boids_{boids}, time_step_size_{time_step_size} {};
+        const std::vector<BoidNode*>& get_boids() const {
             return boids_;
         };
         void add_boid(std::unique_ptr<BoidNode> boid) {
-            boids_.push_back(std::move(boid));
+            boids_.push_back(boid.get());
+            AddChild(std::move(boid));
         };
-        void update_flock();
+
+        void Update(double delta_time) override;
         
     private:
         std::default_random_engine rng{42};  // fixed seed
-        std::vector<std::unique_ptr<BoidNode>> boids_;
+        std::vector<BoidNode*> boids_;
         float time_step_size_ = 0.1f;
         std::vector<BoidNode*> get_visible_boids(const BoidNode& boid);
         std::vector<BoidNode*> get_close_boids(const BoidNode& boid);
-        std::normal_distribution<float> dist{0.0f, 10.0f};
+        std::normal_distribution<float> dist{0.0f, 0.05f};
 };
 } // namespace GLOO
 #endif

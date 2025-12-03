@@ -3,6 +3,8 @@
 #include "BoidNode.hpp"
 // #include <glm/glm.hpp>
 #include <random>
+#include <glm/gtx/string_cast.hpp>
+#include "TestNode.hpp"
 
 
 namespace GLOO{
@@ -12,14 +14,20 @@ FlockNode::FlockNode(){
     // boids_ is a vector of unique_ptrs; start empty
     time_step_size_ = 0.1f;
     for (int i = 0; i < 50; ++i) {
-        boids_.push_back(make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), dist(rng), 0.0f, 0.0f, 1.5f, 5.0f, 3.14f));
+        std::unique_ptr<BoidNode> temp_boid = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, 0.0f, 0.0f, 0.f, 1.5f, 5.0f, 3.14f);
+        boids_.push_back(temp_boid.get());
+        AddChild(std::move(temp_boid));
     }
+
+    std::shared_ptr<VertexObject> sphere_mesh_ = PrimitiveFactory::CreateSphere(0.015f, 25, 25);
+    std::shared_ptr<ShaderProgram> shader_ = std::make_shared<PhongShader>();
+    std::shared_ptr<Material> mat_ = std::make_shared<Material>(Material::GetDefault());
+
 }
 
 std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
     std::vector<BoidNode*> close_boids;
-    for (const auto& other_ptr : boids_) {
-        BoidNode* other = other_ptr.get();
+    for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
             if (distance < boid.get_close_range()) {
@@ -32,8 +40,7 @@ std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
 
 std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
     std::vector<BoidNode*> visible_boids;
-    for (const auto& other_ptr : boids_) {
-        BoidNode* other = other_ptr.get();
+    for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
             float angle = glm::acos(glm::dot(glm::normalize(boid.get_velocity()), glm::normalize(other->get_position() - boid.get_position())));
@@ -45,7 +52,7 @@ std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
     return visible_boids;
 }
 
-void FlockNode::update_flock() {
+void FlockNode::Update(double delta_time) {
     // Constants for each behavior strength
     float alignment_strength = 1.0f;
     float cohesion_strength = 1.0f;
