@@ -39,6 +39,7 @@ class FlockNode : public SceneNode {
         void Update(double delta_time) override;
         glm::vec3 lower_bounds_{-10.f, -10.f, -10.f};
         glm::vec3 upper_bounds_{10.f, 10.f, 10.f};
+        float margin_ = 1.f;
 
     private:
         std::default_random_engine rng{42};  // fixed seed
@@ -48,7 +49,6 @@ class FlockNode : public SceneNode {
         std::vector<BoidNode*> get_close_boids(const BoidNode& boid);
         std::normal_distribution<float> dist{0.0f, 1.f};
         
-        float margin_ = 1.f;
 };
 } // namespace GLOO
 #endif

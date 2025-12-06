@@ -57,7 +57,7 @@ void BoidApp::SetupScene() {
 
     auto flock_node = make_unique<FlockNode>();
     flock_ptr_ = flock_node.get();
-    SetupBoundaries(flock_node->lower_bounds_, flock_node->upper_bounds_);
+    SetupBoundaries(flock_node->lower_bounds_ - glm::vec3(flock_node->margin_), flock_node->upper_bounds_ + glm::vec3(flock_node->margin_));
     root.AddChild(std::move(flock_node));
     
 
@@ -67,25 +67,72 @@ void BoidApp::SetupBoundaries(glm::vec3 lower_bounds, glm::vec3 upper_bounds) {
     // make a cube for bounds
     // maybe add mesh later
 
-    auto quad_mesh = PrimitiveFactory::CreateQuad();
-    // RenderingComponent expects a shared_ptr<VertexObject>, convert ownership
-    std::shared_ptr<VertexObject> quad_mesh_shared = std::move(quad_mesh);
+    // auto quad_mesh = PrimitiveFactory::CreateQuad();
+    // // RenderingComponent expects a shared_ptr<VertexObject>, convert ownership
+    // std::shared_ptr<VertexObject> quad_mesh_shared = std::move(quad_mesh);
 
-    auto boundary_node = make_unique<SceneNode>();
-    boundary_node->CreateComponent<RenderingComponent>(quad_mesh_shared);
-    boundary_node->CreateComponent<ShadingComponent>(std::make_shared<PhongShader>());
-    boundary_node->GetTransform().SetPosition(glm::vec3(lower_bounds.x/2,lower_bounds.y/2,lower_bounds.z));
-    boundary_node->GetTransform().SetScale((upper_bounds - lower_bounds));
+    // auto boundary_node = make_unique<SceneNode>();
+    // boundary_node->CreateComponent<RenderingComponent>(quad_mesh_shared);
+    // boundary_node->CreateComponent<ShadingComponent>(std::make_shared<PhongShader>());
+    // boundary_node->GetTransform().SetPosition(glm::vec3(lower_bounds.x/2,lower_bounds.y/2,lower_bounds.z));
+    // boundary_node->GetTransform().SetScale((upper_bounds - lower_bounds));
 
 
-    std::shared_ptr<Material> mat_ = std::make_shared<Material>();
-    mat_->SetAmbientColor(glm::vec3(0.2f, 0.2f, 0.2f));
-    mat_->SetDiffuseColor(glm::vec3(0.5f, 0.5f, 0.5f));
-    mat_->SetSpecularColor(glm::vec3(0.1f, 0.1f, 0.1f));
+    // std::shared_ptr<Material> mat_ = std::make_shared<Material>();
+    // mat_->SetAmbientColor(glm::vec3(0.2f, 0.2f, 0.2f));
+    // mat_->SetDiffuseColor(glm::vec3(0.5f, 0.5f, 0.5f));
+    // mat_->SetSpecularColor(glm::vec3(0.1f, 0.1f, 0.1f));
     
 
-    boundary_node->CreateComponent<MaterialComponent>(mat_);
-    scene_->GetRootNode().AddChild(std::move(boundary_node));
+    // boundary_node->CreateComponent<MaterialComponent>(mat_);
+    // scene_->GetRootNode().AddChild(std::move(boundary_node));
+
+    // top lines
+    auto line_shader = std::make_shared<SimpleShader>();
+
+    // Build a wireframe rectangular prism from the given bounds (12 edges).
+    auto box = std::make_shared<VertexObject>();
+
+    // 8 corners: top 0-3, bottom 4-7
+    auto positions = make_unique<PositionArray>();
+    positions->push_back(glm::vec3(lower_bounds.x, upper_bounds.y, lower_bounds.z)); // 0
+    positions->push_back(glm::vec3(upper_bounds.x, upper_bounds.y, lower_bounds.z)); // 1
+    positions->push_back(glm::vec3(upper_bounds.x, upper_bounds.y, upper_bounds.z)); // 2
+    positions->push_back(glm::vec3(lower_bounds.x, upper_bounds.y, upper_bounds.z)); // 3
+    positions->push_back(glm::vec3(lower_bounds.x, lower_bounds.y, lower_bounds.z)); // 4
+    positions->push_back(glm::vec3(upper_bounds.x, lower_bounds.y, lower_bounds.z)); // 5
+    positions->push_back(glm::vec3(upper_bounds.x, lower_bounds.y, upper_bounds.z)); // 6
+    positions->push_back(glm::vec3(lower_bounds.x, lower_bounds.y, upper_bounds.z)); // 7
+
+    // Indices for 12 edges (each edge is two indices)
+    auto indices = IndexArray();
+    // top face loop
+    indices.push_back(0); indices.push_back(1);
+    indices.push_back(1); indices.push_back(2);
+    indices.push_back(2); indices.push_back(3);
+    indices.push_back(3); indices.push_back(0);
+    // bottom face loop
+    indices.push_back(4); indices.push_back(5);
+    indices.push_back(5); indices.push_back(6);
+    indices.push_back(6); indices.push_back(7);
+    indices.push_back(7); indices.push_back(4);
+    // vertical connectors
+    indices.push_back(0); indices.push_back(4);
+    indices.push_back(1); indices.push_back(5);
+    indices.push_back(2); indices.push_back(6);
+    indices.push_back(3); indices.push_back(7);
+
+    box->UpdatePositions(std::move(positions));
+    box->UpdateIndices(make_unique<IndexArray>(indices));
+
+    auto line_node = make_unique<SceneNode>();
+    line_node->CreateComponent<ShadingComponent>(line_shader);
+    auto& rc_box = line_node->CreateComponent<RenderingComponent>(box);
+    rc_box.SetDrawMode(DrawMode::Lines);
+    auto color = glm::vec3(0.8f, 0.8f, 0.8f);
+    auto material = std::make_shared<Material>(color, color, color, 0.0f);
+    line_node->CreateComponent<MaterialComponent>(material);
+    scene_->GetRootNode().AddChild(std::move(line_node));
 
 }
 
