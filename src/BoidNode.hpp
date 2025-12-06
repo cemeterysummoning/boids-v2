@@ -26,14 +26,18 @@ class BoidNode : public SceneNode{
             float close_range_ = 1.5f;
             float visible_range_ = 5.0f;
             float visible_angle_ = 3.14f;
+
+            attach_components();
         }
 
         BoidNode(float x, float y, float vx, float vy, float ax, float ay, float close_range, float visible_range, float visible_angle) : 
                 velocity_(glm::vec3{vx, vy, 0.f}), acceleration_{ax, ay, 0.f}, close_range_{close_range}, visible_range_    {visible_range}, visible_angle_{visible_angle} {
                 
-                glm::vec3 position = glm::vec3(x, y, 0.0f);
-                this->GetTransform().SetPosition(position);
-                };
+        glm::vec3 position = glm::vec3(x, y, 0.0f);
+        this->GetTransform().SetPosition(position);
+        attach_components();    
+        };
+
 
         float get_close_range() const {
             return close_range_;
@@ -104,8 +108,21 @@ class BoidNode : public SceneNode{
         glm::vec3 velocity_;
         glm::vec3 acceleration_;
 
+        std::shared_ptr<VertexObject> boid_mesh_ = PrimitiveFactory::CreateCone(0.2f, 0.5f, 10);
+        std::shared_ptr<ShaderProgram> shader_ = std::make_shared<PhongShader>();
+        std::shared_ptr<Material> mat_ = std::make_shared<Material>(Material::GetDefault());    
+
+        void attach_components() {
+            this->CreateComponent<ShadingComponent>(shader_);
+            this->CreateComponent<RenderingComponent>(boid_mesh_);
+            this->CreateComponent<MaterialComponent>(mat_);
+        }; 
+
         void time_step(float dt) {
-           
+            glm::vec3 new_vel = velocity_ + acceleration_ * dt;
+            glm::vec3 new_pos = this->get_position() + new_vel * dt;
+            this->set_velocity(new_vel);
+            this->set_position(new_pos);
         };
         // heading is just normalized velocity
         // do mesh and shit later

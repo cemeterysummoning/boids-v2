@@ -129,4 +129,59 @@ std::unique_ptr<VertexObject> PrimitiveFactory::CreateLineSegment(
   return obj;
 }
 
+std::unique_ptr<VertexObject> PrimitiveFactory::CreateCone(float r,
+                                                           float h,
+                                                           size_t num_sides) {
+  auto positions = make_unique<PositionArray>();
+  auto normals = make_unique<NormalArray>();
+  auto indices = make_unique<IndexArray>();
+
+  // Apex vertex at top
+  glm::vec3 apex(0.0f, h, 0.0f);
+  unsigned int apex_index = 0;  // will be pushed first
+  positions->push_back(apex);
+  normals->push_back(glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
+
+  float step = 2 * kPi / num_sides;
+
+  // Base circle vertices
+  for (size_t i = 0; i < num_sides; ++i) {
+    float angle = i * step;
+    float x = r * cosf(angle);
+    float z = r * sinf(angle);
+    positions->emplace_back(x, 0.0f, z);
+
+    // Side normal approximation: vector (cos, r/h, sin) normalized
+    glm::vec3 n = glm::normalize(glm::vec3(cosf(angle), r / h, sinf(angle)));
+    normals->push_back(n);
+  }
+
+  // Base center vertex (for base fan)
+  unsigned int base_center_index = (unsigned int)positions->size();
+  positions->emplace_back(0.0f, 0.0f, 0.0f);
+  normals->emplace_back(0.0f, -1.0f, 0.0f);
+
+  // Side triangles: apex -> i -> i+1
+  for (size_t i = 0; i < num_sides; ++i) {
+    unsigned int i1 = apex_index;
+    unsigned int i2 = 1 + (unsigned int)i;
+    unsigned int i3 = 1 + (unsigned int)((i + 1) % num_sides);
+    indices->insert(indices->end(), {i1, i2, i3});
+  }
+
+  // Base triangles (fan): base_center -> i+1 -> i
+  for (size_t i = 0; i < num_sides; ++i) {
+    unsigned int i1 = base_center_index;
+    unsigned int i2 = 1 + (unsigned int)((i + 1) % num_sides);
+    unsigned int i3 = 1 + (unsigned int)i;
+    indices->insert(indices->end(), {i1, i2, i3});
+  }
+
+  auto obj = make_unique<VertexObject>();
+  obj->UpdatePositions(std::move(positions));
+  obj->UpdateNormals(std::move(normals));
+  obj->UpdateIndices(std::move(indices));
+  return obj;
+}
+
 }  // namespace GLOO

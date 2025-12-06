@@ -17,6 +17,7 @@
 #include "gloo/cameras/BasicCameraNode.hpp"
 #include "gloo/cameras/ArcBallCameraNode.hpp"
 #include "gloo/debug/PrimitiveFactory.hpp"
+#include "FlockNode.hpp"
 
 namespace {
     const std::vector<std::string> parameterNames = {"cohesion", "alignment", "visual range"};
@@ -45,6 +46,9 @@ void BoidApp::SetupScene() {
   root.AddChild(std::move(ambient_node));
 
   std::shared_ptr<PhongShader> shader = std::make_shared<PhongShader>();
+
+  auto flock_node = make_unique<FlockNode>();
+  root.AddChild(std::move(flock_node));
 
 }
 

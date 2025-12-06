@@ -17,6 +17,11 @@ class PrimitiveFactory {
                                                       float h,
                                                       size_t num_sides);
 
+    // Create a cone with given base radius, height, and number of sides.
+    static std::unique_ptr<VertexObject> CreateCone(float r,
+                                                                                                    float h,
+                                                                                                    size_t num_sides);
+
   static std::unique_ptr<VertexObject> CreateQuad();
 
   // Create a line segment between p and q.
