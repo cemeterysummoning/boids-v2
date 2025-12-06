@@ -18,6 +18,7 @@
 #include "gloo/cameras/ArcBallCameraNode.hpp"
 #include "gloo/debug/PrimitiveFactory.hpp"
 #include "FlockNode.hpp"
+#include "FlockNode.hpp"
 
 namespace {
     const std::vector<std::string> parameterNames = {"cohesion", "alignment", "visual range"};
@@ -30,26 +31,32 @@ BoidApp::BoidApp(const std::string& app_name,
 }
 
 void BoidApp::SetupScene() {
-  SceneNode& root = scene_->GetRootNode();
+    SceneNode& root = scene_->GetRootNode();
 
-  auto camera_node = make_unique<ArcBallCameraNode>(50.0f, 1.0f, 10.0f);
-  camera_node->GetTransform().SetPosition(glm::vec3(0.0f, -1.0f, 0.0f));
-  camera_node->GetTransform().SetRotation(glm::vec3(0.0f, 1.0f, 0.0f), kPi / 2);
-  camera_node->Calibrate();
-  scene_->ActivateCamera(camera_node->GetComponentPtr<CameraComponent>());
-  root.AddChild(std::move(camera_node));
+    auto camera_node = make_unique<ArcBallCameraNode>(50.0f, 10.0f, 100.0f);
+    camera_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 5.f));
+    camera_node->Calibrate();
+    scene_->ActivateCamera(camera_node->GetComponentPtr<CameraComponent>());
+    root.AddChild(std::move(camera_node));
 
-  auto ambient_light = std::make_shared<AmbientLight>();
-  ambient_light->SetAmbientColor(glm::vec3(0.15f));
-  auto ambient_node = make_unique<SceneNode>();
-  ambient_node->CreateComponent<LightComponent>(ambient_light);
-  root.AddChild(std::move(ambient_node));
+    auto ambient_light = std::make_shared<AmbientLight>();
+    ambient_light->SetAmbientColor(glm::vec3(0.5f));
+    root.CreateComponent<LightComponent>(ambient_light);
 
-  std::shared_ptr<PhongShader> shader = std::make_shared<PhongShader>();
+    auto point_light = std::make_shared<PointLight>();
+    point_light->SetDiffuseColor(glm::vec3(0.8f, 0.8f, 0.8f));
+    point_light->SetSpecularColor(glm::vec3(1.0f, 1.0f, 1.0f));
+    point_light->SetAttenuation(glm::vec3(1.0f, 0.09f, 0.032f));
+    auto point_light_node = make_unique<SceneNode>();
+    point_light_node->CreateComponent<LightComponent>(point_light);
+    point_light_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 10.f));
+    root.AddChild(std::move(point_light_node));
 
-  auto flock_node = make_unique<FlockNode>();
-  root.AddChild(std::move(flock_node));
+    std::shared_ptr<PhongShader> shader = std::make_shared<PhongShader>();
 
+    auto flock_node = make_unique<FlockNode>();
+    flock_ptr_ = flock_node.get();
+    root.AddChild(std::move(flock_node));
 }
 
 void BoidApp::DrawGUI() {

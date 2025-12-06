@@ -18,26 +18,30 @@ class BoidNode : public SceneNode{
     public: 
         BoidNode(){
             glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
-            glm::vec3 velocity_ = glm::vec3(1.0f, 1.0f, 1.0f);
-            glm::vec3 acceleration_ = glm::vec3(1.0f, 0.0f, 0.0f);
+            velocity_ = glm::vec3(1.0f, 1.0f, 1.0f);
+            acceleration_ = glm::vec3(1.0f, 0.0f, 0.0f);
+
+            CreateComponent<ShadingComponent>(shader_);
+            CreateComponent<RenderingComponent>(sphere_mesh_);
+            CreateComponent<MaterialComponent>(mat_);
 
             this->GetTransform().SetPosition(position);
 
-            float close_range_ = 1.5f;
-            float visible_range_ = 5.0f;
-            float visible_angle_ = 3.14f;
-
-            attach_components();
+            close_range_ = 1.5f;
+            visible_range_ = 5.0f;
+            visible_angle_ = 3.14f;
         }
 
-        BoidNode(float x, float y, float vx, float vy, float ax, float ay, float close_range, float visible_range, float visible_angle) : 
-                velocity_(glm::vec3{vx, vy, 0.f}), acceleration_{ax, ay, 0.f}, close_range_{close_range}, visible_range_    {visible_range}, visible_angle_{visible_angle} {
-                
-        glm::vec3 position = glm::vec3(x, y, 0.0f);
-        this->GetTransform().SetPosition(position);
-        attach_components();    
-        };
+        BoidNode(float x, float y, float z, float vx, float vy, float vz, float ax, float ay, float az, float close_range, float visible_range, float visible_angle) : 
+            velocity_(glm::vec3{vx, vy, vz}), acceleration_{ax, ay, az}, close_range_{close_range}, visible_range_    {visible_range}, visible_angle_{visible_angle} {
+            
+            glm::vec3 position = glm::vec3(x, y, z);
+            this->GetTransform().SetPosition(position);
 
+            CreateComponent<ShadingComponent>(shader_);
+            CreateComponent<RenderingComponent>(sphere_mesh_);
+            CreateComponent<MaterialComponent>(mat_);
+        };
 
         float get_close_range() const {
             return close_range_;
@@ -93,10 +97,16 @@ class BoidNode : public SceneNode{
 
         void set_velocity(const glm::vec3& vel) {
             velocity_ = vel;
+            if (glm::length(velocity_) > max_speed_) {
+                velocity_ = glm::normalize(velocity_) * max_speed_;
+            }
         };
 
         void set_acceleration(const glm::vec3& acc) {
             acceleration_ = acc;
+            if (glm::length(acceleration_) > max_acc_) {
+                acceleration_ = glm::normalize(acceleration_) * max_acc_;
+            }
         };
 
 
@@ -108,15 +118,8 @@ class BoidNode : public SceneNode{
         glm::vec3 velocity_;
         glm::vec3 acceleration_;
 
-        std::shared_ptr<VertexObject> boid_mesh_ = PrimitiveFactory::CreateCone(0.2f, 0.5f, 10);
-        std::shared_ptr<ShaderProgram> shader_ = std::make_shared<PhongShader>();
-        std::shared_ptr<Material> mat_ = std::make_shared<Material>(Material::GetDefault());    
-
-        void attach_components() {
-            this->CreateComponent<ShadingComponent>(shader_);
-            this->CreateComponent<RenderingComponent>(boid_mesh_);
-            this->CreateComponent<MaterialComponent>(mat_);
-        }; 
+        float max_speed_ = 1.f;
+        float max_acc_ = 0.05;
 
         void time_step(float dt) {
             glm::vec3 new_vel = velocity_ + acceleration_ * dt;
@@ -124,6 +127,10 @@ class BoidNode : public SceneNode{
             this->set_velocity(new_vel);
             this->set_position(new_pos);
         };
+
+        std::shared_ptr<VertexObject> sphere_mesh_ = PrimitiveFactory::CreateSphere(0.5f, 25, 25);
+        std::shared_ptr<ShaderProgram> shader_ = std::make_shared<PhongShader>();
+        std::shared_ptr<Material> mat_ = std::make_shared<Material>(Material::GetDefault());
         // heading is just normalized velocity
         // do mesh and shit later
 };
