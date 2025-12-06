@@ -33,30 +33,60 @@ BoidApp::BoidApp(const std::string& app_name,
 void BoidApp::SetupScene() {
     SceneNode& root = scene_->GetRootNode();
 
-    auto camera_node = make_unique<ArcBallCameraNode>(50.0f, 10.0f, 100.0f);
-    camera_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 5.f));
+    auto camera_node = make_unique<ArcBallCameraNode>(50.0f, 0.75f, 50.0f);
+    // camera_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 50.f));
     camera_node->Calibrate();
     scene_->ActivateCamera(camera_node->GetComponentPtr<CameraComponent>());
     root.AddChild(std::move(camera_node));
 
     auto ambient_light = std::make_shared<AmbientLight>();
-    ambient_light->SetAmbientColor(glm::vec3(0.5f));
+    ambient_light->SetAmbientColor(glm::vec3(1.0f));
     root.CreateComponent<LightComponent>(ambient_light);
 
-    auto point_light = std::make_shared<PointLight>();
-    point_light->SetDiffuseColor(glm::vec3(0.8f, 0.8f, 0.8f));
-    point_light->SetSpecularColor(glm::vec3(1.0f, 1.0f, 1.0f));
-    point_light->SetAttenuation(glm::vec3(1.0f, 0.09f, 0.032f));
-    auto point_light_node = make_unique<SceneNode>();
-    point_light_node->CreateComponent<LightComponent>(point_light);
-    point_light_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 10.f));
-    root.AddChild(std::move(point_light_node));
+
+    // auto point_light = std::make_shared<PointLight>();
+    // point_light->SetDiffuseColor(glm::vec3(0.8f, 0.8f, 0.8f));
+    // point_light->SetSpecularColor(glm::vec3(1.0f, 1.0f, 1.0f));
+    // point_light->SetAttenuation(glm::vec3(1.0f, 0.09f, 0.032f));
+    // auto point_light_node = make_unique<SceneNode>();
+    // point_light_node->CreateComponent<LightComponent>(point_light);
+    // point_light_node->GetTransform().SetPosition(glm::vec3(0.f, 0.f, 10.f));
+    // root.AddChild(std::move(point_light_node));
 
     std::shared_ptr<PhongShader> shader = std::make_shared<PhongShader>();
 
     auto flock_node = make_unique<FlockNode>();
     flock_ptr_ = flock_node.get();
+    SetupBoundaries(flock_node->lower_bounds_, flock_node->upper_bounds_);
     root.AddChild(std::move(flock_node));
+    
+
+}
+
+void BoidApp::SetupBoundaries(glm::vec3 lower_bounds, glm::vec3 upper_bounds) {
+    // make a cube for bounds
+    // maybe add mesh later
+
+    auto quad_mesh = PrimitiveFactory::CreateQuad();
+    // RenderingComponent expects a shared_ptr<VertexObject>, convert ownership
+    std::shared_ptr<VertexObject> quad_mesh_shared = std::move(quad_mesh);
+
+    auto boundary_node = make_unique<SceneNode>();
+    boundary_node->CreateComponent<RenderingComponent>(quad_mesh_shared);
+    boundary_node->CreateComponent<ShadingComponent>(std::make_shared<PhongShader>());
+    boundary_node->GetTransform().SetPosition(glm::vec3(lower_bounds.x/2,lower_bounds.y/2,lower_bounds.z));
+    boundary_node->GetTransform().SetScale((upper_bounds - lower_bounds));
+
+
+    std::shared_ptr<Material> mat_ = std::make_shared<Material>();
+    mat_->SetAmbientColor(glm::vec3(0.2f, 0.2f, 0.2f));
+    mat_->SetDiffuseColor(glm::vec3(0.5f, 0.5f, 0.5f));
+    mat_->SetSpecularColor(glm::vec3(0.1f, 0.1f, 0.1f));
+    
+
+    boundary_node->CreateComponent<MaterialComponent>(mat_);
+    scene_->GetRootNode().AddChild(std::move(boundary_node));
+
 }
 
 void BoidApp::DrawGUI() {

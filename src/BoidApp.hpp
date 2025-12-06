@@ -9,7 +9,7 @@ class BoidApp : public Application {
     public:
         BoidApp(const std::string& app_name, glm::ivec2 window_size);
         void SetupScene() override;
-
+        void SetupBoundaries(glm::vec3 lower_bounds, glm::vec3 upper_bounds);
     protected:
         void DrawGUI() override;
 

@@ -39,7 +39,8 @@ class BoidNode : public SceneNode{
             this->GetTransform().SetPosition(position);
 
             CreateComponent<ShadingComponent>(shader_);
-            CreateComponent<RenderingComponent>(sphere_mesh_);
+            // CreateComponent<RenderingComponent>(sphere_mesh_);
+            CreateComponent<RenderingComponent>(cone_mesh_);
             CreateComponent<MaterialComponent>(mat_);
         };
 
@@ -129,10 +130,10 @@ class BoidNode : public SceneNode{
         };
 
         std::shared_ptr<VertexObject> sphere_mesh_ = PrimitiveFactory::CreateSphere(0.5f, 25, 25);
+        std::shared_ptr<VertexObject> cone_mesh_ = PrimitiveFactory::CreateCone(0.2f, 0.5f, 25);
         std::shared_ptr<ShaderProgram> shader_ = std::make_shared<PhongShader>();
         std::shared_ptr<Material> mat_ = std::make_shared<Material>(Material::GetDefault());
         // heading is just normalized velocity
-        // do mesh and shit later
 };
 } // namespace GLOO
 #endif

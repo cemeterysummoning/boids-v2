@@ -4,6 +4,8 @@
 // #include <glm/glm.hpp>
 #include <random>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/constants.hpp>
 #include "TestNode.hpp"
 
 
@@ -12,11 +14,14 @@ FlockNode::FlockNode(){
     // Default constructor
     // 50 boids with default parameters and time step size 0.1, normally distributed around (0,0) 
     // boids_ is a vector of unique_ptrs; start empty
+
+    // debugging rn so only 10
     time_step_size_ = 0.1f;
     for (int i = 0; i < 100; ++i) {
         std::unique_ptr<BoidNode> temp_boid = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, 0.0f, 0.0f, 0.f, 1.5f, 5.0f, 3.14f);
         boids_.push_back(temp_boid.get());
         AddChild(std::move(temp_boid));
+        std::cout << "Added boid at" << glm::to_string(boids_.back()->get_position()) << std::endl;
     }
 }
 
@@ -50,9 +55,9 @@ std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
 void FlockNode::Update(double delta_time) {
     // Constants for each behavior strength
     float alignment_strength = 1.0f;
-    float cohesion_strength = 1.0f;
-    float separation_strength = 1.5f;
-    float max_speed = 2.0f;
+    float cohesion_strength = 0.1f;
+    float separation_strength = 3.0f;
+    float max_speed = 8.0f;
     float max_force = 0.05f;
 
     for (auto& boid_ptr : boids_) {
@@ -81,33 +86,69 @@ void FlockNode::Update(double delta_time) {
         steer_alignment -= boid.get_velocity();
         steer_cohesion -= boid.get_position();
 
-        glm::vec3 new_acc = steer_separation * separation_strength + steer_alignment * alignment_strength + steer_cohesion * cohesion_strength;
+        // smooth turning at margins
+
+        float turn_factor = 0.5f;
+        glm::vec3 boundary_turn_acceleration = glm::vec3(0.f);
+
+        if (boid.get_position().x < lower_bounds_.x + margin_) {
+            boundary_turn_acceleration.x += (lower_bounds_.x + margin_ - boid.get_position().x) * turn_factor;
+        } else if (boid.get_position().x > upper_bounds_.x - margin_) {
+            boundary_turn_acceleration.x -= (boid.get_position().x - (upper_bounds_.x - margin_)) * turn_factor;
+        }
+
+        if (boid.get_position().y < lower_bounds_.y + margin_) {
+            boundary_turn_acceleration.y += (lower_bounds_.y + margin_ - boid.get_position().y) * turn_factor;
+        } else if (boid.get_position().y > upper_bounds_.y - margin_) {
+            boundary_turn_acceleration.y -= (boid.get_position().y - (upper_bounds_.y - margin_)) * turn_factor;
+        }
+
+        if (boid.get_position().z < lower_bounds_.z + margin_) {
+            boundary_turn_acceleration.z += (lower_bounds_.z + margin_ - boid.get_position().z) * turn_factor;
+        } else if (boid.get_position().z > upper_bounds_.z - margin_) {
+            boundary_turn_acceleration.z -= (boid.get_position().z - (upper_bounds_.z - margin_)) * turn_factor;
+        }
+
+
+
+
+        glm::vec3 new_acc = steer_separation * separation_strength + steer_alignment * alignment_strength + steer_cohesion * cohesion_strength + boundary_turn_acceleration;
         glm::vec3 new_vel = boid.get_velocity() + new_acc * time_step_size_;
         glm::vec3 new_pos = boid.get_position() + new_vel * time_step_size_;
 
 
+
+
         if (glm::length(new_vel) > 0.001f) {
-    
-            // 2. Normalize the velocity to get the direction
-            glm::vec3 direction = glm::normalize(new_vel);
-            
-            // 3. Define the 'Up' vector (usually World Y)
-            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-            // 4. Calculate target rotation
-            // Note: glm::quatLookAt creates a rotation looking in the 'direction'
-            // This assumes your model's forward face is -Z (Standard OpenGL). 
-            // If your model faces +Z, negate the direction: glm::quatLookAt(-direction, up)
-            glm::quat target_rotation = glm::quatLookAt(direction, up);
+            // Align the model's local +Y axis to the velocity direction.
+            glm::vec3 dir = glm::normalize(new_vel);
+            const glm::vec3 model_y(0.0f, 1.0f, 0.0f);
+            const float eps = 1e-6f;
 
-            // 5. OPTIONAL: Smooth the rotation (Slerp)
-            // Instant rotation looks robotic. Spherical Linear Interpolation (Slerp) 
-            // makes it turn naturally over time.
-            float turn_speed = 5.0f * time_step_size_;
-            glm::quat current_rotation = boid.get_rotation(); // Assuming you have this getter
-            glm::quat new_rotation = glm::slerp(current_rotation, target_rotation, turn_speed);
+            glm::quat target_rotation;
 
+            // If dir is (almost) equal to model_y, use identity rotation.
+            if (glm::length2(dir - model_y) < eps) {
+                target_rotation = glm::quat(1.f, 0.f, 0.f, 0.f);
+            } else if (glm::length2(dir + model_y) < eps) {
+                // dir is opposite to model_y: 180 degree rotation around any perpendicular axis
+                glm::vec3 axis = glm::cross(model_y, glm::vec3(1.f, 0.f, 0.f));
+                if (glm::length2(axis) < eps) axis = glm::cross(model_y, glm::vec3(0.f, 0.f, 1.f));
+                axis = glm::normalize(axis);
+                target_rotation = glm::angleAxis(glm::pi<float>(), axis);
+            } else {
+                // General case: rotation that takes +Y to dir
+                target_rotation = glm::rotation(model_y, dir);
+            }
+
+            // Smoothly slerp from current rotation toward target for natural turning.
+            float turn_speed = 5.0f; // units: 1/second, tweakable
+            float alpha = 1.0f - std::exp(-turn_speed * static_cast<float>(delta_time));
+            glm::quat current = boid.GetTransform().GetRotation();
+            glm::quat new_rotation = glm::slerp(current, target_rotation, glm::clamp(alpha, 0.0f, 1.0f));
             boid.set_rotation(new_rotation);
+
         }
 
         boid.set_acceleration(new_acc);
