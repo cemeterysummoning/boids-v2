@@ -15,7 +15,29 @@ class BoidApp : public Application {
 
     private:
         std::vector<float> slider_values_;
+        std::vector<float>* slider_values_ptr_;
         FlockNode* flock_ptr_;
+
+        std::vector<float> min_values_ = {
+            0.0f, // 0: close range
+            0.0f, // 1: visible range 
+            0.0f, // 2: visible angle
+            0.05f, // 3: alignment strength
+            0.05f, // 4: cohesion strength
+            0.05f, // 5: separation strength
+            0.05f, // 6: max speed
+            0.0f // 7: max force
+        };
+        std::vector<float> max_values_ = {
+            10.0f, // 0: close range
+            20.0f, // 1: visible range 
+            3.14f, // 2: visible angle
+            10.0f, // 3: alignment strength
+            10.0f, // 4: cohesion strength
+            10.0f, // 5: separation strength
+            30.0f, // 6: max speed
+            30.0f // 7: max force
+        };
 };
 }  // namespace GLOO
 

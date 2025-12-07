@@ -21,13 +21,13 @@
 #include "FlockNode.hpp"
 
 namespace {
-    const std::vector<std::string> parameterNames = {"cohesion", "alignment", "visual range"};
+    const std::vector<std::string> parameterNames = {"close range", "visible range", "visible angle", "alignment strength", "cohesion strength", "separation strength", "max speed", "max force"};
 }
 
 namespace GLOO {
 BoidApp::BoidApp(const std::string& app_name,
                                  glm::ivec2 window_size)
-    : Application(app_name, window_size), slider_values_(parameterNames.size(), 0.f) {
+    : Application(app_name, window_size){
 }
 
 void BoidApp::SetupScene() {
@@ -59,8 +59,6 @@ void BoidApp::SetupScene() {
     flock_ptr_ = flock_node.get();
     SetupBoundaries(flock_node->lower_bounds_ - glm::vec3(flock_node->margin_), flock_node->upper_bounds_ + glm::vec3(flock_node->margin_));
     root.AddChild(std::move(flock_node));
-    
-
 }
 
 void BoidApp::SetupBoundaries(glm::vec3 lower_bounds, glm::vec3 upper_bounds) {
@@ -142,7 +140,7 @@ void BoidApp::DrawGUI() {
     for (size_t i = 0; i < parameterNames.size(); i++) {
         ImGui::Text("%s", parameterNames[i].c_str());
         ImGui::PushID((int)i);
-        modified |= ImGui::SliderFloat("", &slider_values_[i], -kPi, kPi);
+        modified |= ImGui::SliderFloat("", &flock_ptr_->params_[i], min_values_[i], max_values_[i]);
         ImGui::PopID();
     }
     ImGui::End();

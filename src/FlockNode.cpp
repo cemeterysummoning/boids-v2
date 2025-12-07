@@ -30,7 +30,7 @@ std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
     for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
-            if (distance < boid.get_close_range()) {
+            if (distance < params_[0]) {
                 close_boids.push_back(other);
             }
         }
@@ -44,7 +44,7 @@ std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
             float angle = glm::acos(glm::dot(glm::normalize(boid.get_velocity()), glm::normalize(other->get_position() - boid.get_position())));
-            if (distance < boid.get_visible_range() && angle < boid.get_visible_angle() / 2.0f) {
+            if (distance < params_[1] && angle < params_[2] / 2.0f) {
                 visible_boids.push_back(other); 
             }
         }
@@ -54,12 +54,6 @@ std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
 
 void FlockNode::Update(double delta_time) {
     // Constants for each behavior strength
-    float alignment_strength = 1.0f;
-    float cohesion_strength = 0.1f;
-    float separation_strength = 3.0f;
-    float max_speed = 8.0f;
-    float max_force = 0.05f;
-
     for (auto& boid_ptr : boids_) {
         BoidNode& boid = *boid_ptr;
         std::vector<BoidNode*> visible_boids = get_visible_boids(boid);
@@ -109,15 +103,19 @@ void FlockNode::Update(double delta_time) {
             boundary_turn_acceleration.z -= (boid.get_position().z - (upper_bounds_.z - margin_)) * turn_factor;
         }
 
+        glm::vec3 new_acc = steer_separation * params_[5] + steer_alignment * params_[3] + steer_cohesion * params_[4] + boundary_turn_acceleration;
 
+        if (glm::length(new_acc) > params_[7]) {
+            new_acc = glm::normalize(new_acc) * params_[7];
+        }
 
-
-        glm::vec3 new_acc = steer_separation * separation_strength + steer_alignment * alignment_strength + steer_cohesion * cohesion_strength + boundary_turn_acceleration;
         glm::vec3 new_vel = boid.get_velocity() + new_acc * time_step_size_;
+
+        if (glm::length(new_vel) > params_[6]) {
+            new_vel = glm::normalize(new_vel) * params_[6];
+        }
+
         glm::vec3 new_pos = boid.get_position() + new_vel * time_step_size_;
-
-
-
 
         if (glm::length(new_vel) > 0.001f) {
 
@@ -155,5 +153,11 @@ void FlockNode::Update(double delta_time) {
         boid.set_velocity(new_vel);
         boid.set_position(new_pos);
     }
+}
+
+
+
+void FlockNode::UpdateParams() {
+
 }
 } // namespace GLOO
