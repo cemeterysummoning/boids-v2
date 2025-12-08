@@ -32,7 +32,7 @@ FlockNode::FlockNode(){
 
     // debugging rn so only 10
     time_step_size_ = 0.1f;
-    for (int i = 0; i < 5000; ++i) {
+    for (int i = 0; i < 2000; ++i) {
         std::unique_ptr<BoidNode> temp_boid = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, 0.0f, 0.0f, 0.f, 1.5f, 5.0f, 3.14f);
         boids_.push_back(temp_boid.get());
         AddChild(std::move(temp_boid));
@@ -113,8 +113,7 @@ void FlockNode::Update(double delta_time) {
     }
 
     double avgNeighbors = boids_.empty() ? 0.0 : static_cast<double>(totalNeighbors) / static_cast<double>(boids_.size());
-    std::cout << "avg neighbors: " << avgNeighbors
-              << ", max neighbors: " << maxNeighbors << "\n";
+    
 
 
     for (auto& boid_ptr : boids_) {
@@ -221,6 +220,8 @@ void FlockNode::Update(double delta_time) {
     double updateMs = ms(t1, t2);
     if (buildMs + updateMs > 16.67) {
         std::cout << "Warning: Slow frame! Quadtree build: " << buildMs << " ms, Boid update: " << updateMs << " ms, Total: " << (buildMs + updateMs) << " ms\n";
+        std::cout << "avg neighbors: " << avgNeighbors
+              << ", max neighbors: " << maxNeighbors << "\n";
     }
 }
 
