@@ -16,10 +16,15 @@
 namespace GLOO{
 class BoidNode : public SceneNode{
     public: 
-        BoidNode(){
+        BoidNode(bool predator = false){
             glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
             velocity_ = glm::vec3(1.0f, 1.0f, 1.0f);
             acceleration_ = glm::vec3(1.0f, 0.0f, 0.0f);
+            predator_ = predator;
+
+            if (!predator_) {
+                mat_->SetAmbientColor(glm::vec3(1.f));
+            }
 
             CreateComponent<ShadingComponent>(shader_);
             CreateComponent<RenderingComponent>(sphere_mesh_);
@@ -30,18 +35,25 @@ class BoidNode : public SceneNode{
             close_range_ = 1.5f;
             visible_range_ = 5.0f;
             visible_angle_ = 3.14f;
+
         }
 
-        BoidNode(float x, float y, float z, float vx, float vy, float vz, float ax, float ay, float az, float close_range, float visible_range, float visible_angle) : 
+        BoidNode(float x, float y, float z, float vx, float vy, float vz, float ax, float ay, float az, float close_range, float visible_range, float visible_angle, bool predator = false) : 
             velocity_(glm::vec3{vx, vy, vz}), acceleration_{ax, ay, az}, close_range_{close_range}, visible_range_    {visible_range}, visible_angle_{visible_angle} {
             
             glm::vec3 position = glm::vec3(x, y, z);
             this->GetTransform().SetPosition(position);
+            predator_ = predator;
+
+            if (!predator_) {
+                mat_->SetAmbientColor(glm::vec3(1.f));
+            }
 
             CreateComponent<ShadingComponent>(shader_);
             // CreateComponent<RenderingComponent>(sphere_mesh_);
             CreateComponent<RenderingComponent>(cone_mesh_);
             CreateComponent<MaterialComponent>(mat_);
+
         };
 
         float get_close_range() const {
@@ -98,23 +110,21 @@ class BoidNode : public SceneNode{
 
         void set_velocity(const glm::vec3& vel) {
             velocity_ = vel;
-            if (glm::length(velocity_) > max_speed_) {
-                velocity_ = glm::normalize(velocity_) * max_speed_;
-            }
         };
 
         void set_acceleration(const glm::vec3& acc) {
             acceleration_ = acc;
-            if (glm::length(acceleration_) > max_acc_) {
-                acceleration_ = glm::normalize(acceleration_) * max_acc_;
-            }
         };
 
-
+        bool is_predator() const {
+            return predator_;
+        }
     private:
         float close_range_;
         float visible_range_;
         float visible_angle_;
+
+        bool predator_ = false;
 
         glm::vec3 velocity_;
         glm::vec3 acceleration_;

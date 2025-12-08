@@ -7,7 +7,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
 #include "TestNode.hpp"
-
+#include "gloo/InputManager.hpp"
 
 namespace GLOO{
 FlockNode::FlockNode(){
@@ -23,10 +23,19 @@ FlockNode::FlockNode(){
         AddChild(std::move(temp_boid));
         std::cout << "Added boid at" << glm::to_string(boids_.back()->get_position()) << std::endl;
     }
+
+    std::unique_ptr<BoidNode> temp_predator = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, -0.5f, -0.5f, -0.5f, 1.5f, 5.0f, 3.14f, true);
+    predator_ = temp_predator.get();
+    boids_.push_back(temp_predator.get());
+    AddChild(std::move(temp_predator));
+
 }
 
 std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
     std::vector<BoidNode*> close_boids;
+    if (boid.is_predator()) {
+        return close_boids;
+    }
     for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
@@ -40,6 +49,9 @@ std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
 
 std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
     std::vector<BoidNode*> visible_boids;
+    if (boid.is_predator()) {
+        return visible_boids;
+    }
     for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
@@ -63,9 +75,15 @@ void FlockNode::Update(double delta_time) {
         glm::vec3 steer_alignment = glm::vec3(0.f);
         glm::vec3 steer_cohesion = glm::vec3(0.f);
 
+        glm::vec3 predator_delta = glm::vec3(0.f);
+
         if (!close_boids.empty()) {
             for (const BoidNode* other : close_boids) {
                 steer_separation += boid.get_position() - other->get_position();
+                if (other->is_predator()) {
+                    predator_delta = boid.get_position() - other->get_position();
+                    steer_separation += params_[8] * predator_delta;
+                }
             }
         }
 
@@ -104,6 +122,10 @@ void FlockNode::Update(double delta_time) {
         }
 
         glm::vec3 new_acc = steer_separation * params_[5] + steer_alignment * params_[3] + steer_cohesion * params_[4] + boundary_turn_acceleration;
+
+        if (boid.is_predator()) {
+            new_acc = boid.get_acceleration();
+        }
 
         if (glm::length(new_acc) > params_[7]) {
             new_acc = glm::normalize(new_acc) * params_[7];
@@ -153,11 +175,19 @@ void FlockNode::Update(double delta_time) {
         boid.set_velocity(new_vel);
         boid.set_position(new_pos);
     }
-}
 
-
-
-void FlockNode::UpdateParams() {
-
+    if (InputManager::GetInstance().IsKeyPressed('W')) {
+        predator_->set_velocity(glm::vec3(0.f, 0.5f, 0.f));
+    } else if (InputManager::GetInstance().IsKeyPressed('A')) {
+        predator_->set_velocity(glm::vec3(-0.5f, 0.f, 0.f));
+    } else if (InputManager::GetInstance().IsKeyPressed('S')) {
+        predator_->set_velocity(glm::vec3(0.f, -0.5f, 0.f));
+    } else if (InputManager::GetInstance().IsKeyPressed('D')) {
+        predator_->set_velocity(glm::vec3(0.5f, 0.f, 0.f));
+    } else if (InputManager::GetInstance().IsKeyPressed(265)) {
+        predator_->set_velocity(glm::vec3(0.f, 0.f, 0.5f));
+    } else if (InputManager::GetInstance().IsKeyPressed(264)) {
+        predator_->set_velocity(glm::vec3(0.f, 0.f, -0.5f));
+    }
 }
 } // namespace GLOO
