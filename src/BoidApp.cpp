@@ -21,7 +21,7 @@
 #include "FlockNode.hpp"
 
 namespace {
-    const std::vector<std::string> parameterNames = {"close range", "visible range", "visible angle", "alignment strength", "cohesion strength", "separation strength", "max speed", "max force"};
+    const std::vector<std::string> parameterNames = {"close range", "visible range", "visible angle", "alignment strength", "cohesion strength", "separation strength", "max speed", "max force", "predator avoidance"};
 }
 
 namespace GLOO {

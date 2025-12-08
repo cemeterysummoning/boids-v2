@@ -26,7 +26,8 @@ class BoidApp : public Application {
             0.05f, // 4: cohesion strength
             0.05f, // 5: separation strength
             0.05f, // 6: max speed
-            0.0f // 7: max force
+            0.0f, // 7: max force
+            0.0f // 8: predator avoidance
         };
         std::vector<float> max_values_ = {
             10.0f, // 0: close range
@@ -36,7 +37,8 @@ class BoidApp : public Application {
             10.0f, // 4: cohesion strength
             10.0f, // 5: separation strength
             30.0f, // 6: max speed
-            30.0f // 7: max force
+            30.0f, // 7: max force,
+            10.0f // 8: predator avoidance
         };
 };
 }  // namespace GLOO

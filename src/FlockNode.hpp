@@ -54,7 +54,8 @@ class FlockNode : public SceneNode {
             0.1f, // 4: cohesion strength
             3.0f, // 5: separation strength
             8.0f, // 6: max speed
-            0.5f // 7: max force
+            0.5f, // 7: max force
+            1.f // 8: predator avoidance
         };
 
     private:
@@ -63,6 +64,7 @@ class FlockNode : public SceneNode {
         float time_step_size_ = 0.1f;
         std::vector<BoidNode*> get_visible_boids(const BoidNode& boid);
         std::vector<BoidNode*> get_close_boids(const BoidNode& boid);
+        BoidNode* predator_;
         std::normal_distribution<float> dist{0.0f, 10.f};
         std::unique_ptr<QuadTree> quadtree_ = nullptr;
 };
