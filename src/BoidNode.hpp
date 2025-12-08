@@ -123,6 +123,10 @@ class BoidNode : public SceneNode{
         bool is_predator() const {
             return predator_;
         }
+
+        void set_mesh_scale(float scale) {
+            this->GetTransform().SetScale(glm::vec3(scale));
+        }
     private:
         float close_range_;
         float visible_range_;

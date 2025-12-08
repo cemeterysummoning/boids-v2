@@ -32,7 +32,7 @@ FlockNode::FlockNode(){
 
     // debugging rn so only 10
     time_step_size_ = 0.1f;
-    for (int i = 0; i < 2000; ++i) {
+    for (int i = 0; i < 4000; ++i) {
         std::unique_ptr<BoidNode> temp_boid = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, 0.0f, 0.0f, 0.f, 1.5f, 5.0f, 3.14f);
         boids_.push_back(temp_boid.get());
         AddChild(std::move(temp_boid));
@@ -42,6 +42,7 @@ FlockNode::FlockNode(){
 
     std::unique_ptr<BoidNode> temp_predator = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, -0.5f, -0.5f, -0.5f, 1.5f, 5.0f, 3.14f, true);
     predator_ = temp_predator.get();
+    predator_->set_mesh_scale(3.0f); // make predator larger
     boids_.push_back(temp_predator.get());
     AddChild(std::move(temp_predator));
 
@@ -237,6 +238,7 @@ void FlockNode::Update(double delta_time) {
         boid.set_velocity(new_vel);
         boid.set_position(new_pos);
     }
+
     auto t2 = now();
     double buildMs = ms(t0, t1);
     double updateMs = ms(t1, t2);
