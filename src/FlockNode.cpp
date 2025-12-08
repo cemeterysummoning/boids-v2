@@ -7,9 +7,24 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
 #include "TestNode.hpp"
+#include <chrono>
+#include <iostream>
+#include <algorithm>
 #include "gloo/InputManager.hpp"
 
 namespace GLOO{
+
+using clock = std::chrono::high_resolution_clock;
+using time_point = std::chrono::time_point<clock>;
+
+inline time_point now() {
+    return clock::now();
+}
+
+inline double ms(time_point t0, time_point t1) {
+    return std::chrono::duration<double, std::milli>(t1 - t0).count();
+}
+
 FlockNode::FlockNode(){
     // Default constructor
     // 50 boids with default parameters and time step size 0.1, normally distributed around (0,0) 
@@ -17,12 +32,13 @@ FlockNode::FlockNode(){
 
     // debugging rn so only 10
     time_step_size_ = 0.1f;
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 5000; ++i) {
         std::unique_ptr<BoidNode> temp_boid = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, 0.0f, 0.0f, 0.f, 1.5f, 5.0f, 3.14f);
         boids_.push_back(temp_boid.get());
         AddChild(std::move(temp_boid));
-        std::cout << "Added boid at" << glm::to_string(boids_.back()->get_position()) << std::endl;
+        // std::cout << "Added boid at" << glm::to_string(boids_.back()->get_position()) << std::endl;
     }
+    quadtree_ = make_unique<QuadTree>(lower_bounds_, upper_bounds_, 4, boids_);
 
     std::unique_ptr<BoidNode> temp_predator = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, -0.5f, -0.5f, -0.5f, 1.5f, 5.0f, 3.14f, true);
     predator_ = temp_predator.get();
@@ -36,6 +52,13 @@ std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
     if (boid.is_predator()) {
         return close_boids;
     }
+
+    auto boid_ptr = &boid;
+    if (quadtree_) {
+        quadtree_->query(boid_ptr, params_[0], 6.28, close_boids);
+        return close_boids;
+    }
+
     for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
@@ -52,6 +75,13 @@ std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
     if (boid.is_predator()) {
         return visible_boids;
     }
+
+    if (quadtree_) {
+        auto boid_ptr = &boid;
+        quadtree_->query(boid_ptr, params_[1], params_[2], visible_boids);
+        return visible_boids;
+    }
+
     for (const auto& other : boids_) {
         if (other != &boid) {
             float distance = glm::length(other->get_position() - boid.get_position());
@@ -66,6 +96,39 @@ std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
 
 void FlockNode::Update(double delta_time) {
     // Constants for each behavior strength
+
+    //reconstruct quadtree each frame
+
+    auto t0 = now();
+    quadtree_ = make_unique<QuadTree>(lower_bounds_, upper_bounds_, 4, boids_);
+    auto t1 = now();
+
+    int totalNeighbors = 0;
+    int maxNeighbors = 0;
+
+    // Per-boid neighbor counting for debugging (counts boids within close range)
+    for (auto& bptr : boids_) {
+        std::vector<BoidNode*> neighbors;
+        if (quadtree_) {
+            // use quadtree query (radius = close range, full circle angle)
+            quadtree_->query(bptr, params_[0], 6.28f, neighbors);
+        } else {
+            // fall back to linear scan
+            for (auto& other : boids_) {
+                if (other == bptr) continue;
+                float distance = glm::length(other->get_position() - bptr->get_position());
+                if (distance < params_[0]) neighbors.push_back(other);
+            }
+        }
+        totalNeighbors += static_cast<int>(neighbors.size());
+        maxNeighbors = std::max(maxNeighbors, static_cast<int>(neighbors.size()));
+    }
+
+    double avgNeighbors = boids_.empty() ? 0.0 : static_cast<double>(totalNeighbors) / static_cast<double>(boids_.size());
+    std::cout << "avg neighbors: " << avgNeighbors
+              << ", max neighbors: " << maxNeighbors << "\n";
+
+
     for (auto& boid_ptr : boids_) {
         BoidNode& boid = *boid_ptr;
         std::vector<BoidNode*> visible_boids = get_visible_boids(boid);
@@ -174,6 +237,12 @@ void FlockNode::Update(double delta_time) {
         boid.set_acceleration(new_acc);
         boid.set_velocity(new_vel);
         boid.set_position(new_pos);
+    }
+    auto t2 = now();
+    double buildMs = ms(t0, t1);
+    double updateMs = ms(t1, t2);
+    if (buildMs + updateMs > 16.67) {
+        std::cout << "Warning: Slow frame! Quadtree build: " << buildMs << " ms, Boid update: " << updateMs << " ms, Total: " << (buildMs + updateMs) << " ms\n";
     }
 
     if (InputManager::GetInstance().IsKeyPressed('W')) {
