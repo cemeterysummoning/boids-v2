@@ -28,8 +28,10 @@ class BoidNode : public SceneNode{
             this->GetTransform().SetPosition(position);
 
             close_range_ = 1.5f;
-            visible_range_ = 5.0f;
+            visible_range_ = 2.0f;
             visible_angle_ = 3.14f;
+
+            // this->SetActive(false); testing whether render or simulation is bottleneck
         }
 
         BoidNode(float x, float y, float z, float vx, float vy, float vz, float ax, float ay, float az, float close_range, float visible_range, float visible_angle) : 
@@ -42,6 +44,8 @@ class BoidNode : public SceneNode{
             // CreateComponent<RenderingComponent>(sphere_mesh_);
             CreateComponent<RenderingComponent>(cone_mesh_);
             CreateComponent<MaterialComponent>(mat_);
+            // this->SetActive(false); testing whether render or simulation is bottleneck
+
         };
 
         float get_close_range() const {
