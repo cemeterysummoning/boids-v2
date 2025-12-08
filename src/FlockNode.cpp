@@ -40,12 +40,17 @@ FlockNode::FlockNode(){
     }
     quadtree_ = make_unique<QuadTree>(lower_bounds_, upper_bounds_, 4, boids_);
 
-    std::unique_ptr<BoidNode> temp_predator = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 0.01f, 0.01f, 0.01f, -0.5f, -0.5f, -0.5f, 1.5f, 5.0f, 3.14f, true);
+    std::unique_ptr<BoidNode> temp_predator = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.f, 5.f, 10.f, 3.14f, true);
     predator_ = temp_predator.get();
     predator_->set_mesh_scale(3.0f); // make predator larger
     boids_.push_back(temp_predator.get());
     AddChild(std::move(temp_predator));
 
+    for (int i = 0; i < 4; i++) {
+        std::unique_ptr<BoidNode> temp_predator = make_unique<BoidNode>(dist(rng), dist(rng), dist(rng), 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.f, 5.f, 10.f, 3.14f, true);
+        boids_.push_back(temp_predator.get());
+        AddChild(std::move(temp_predator));
+    }
 }
 
 std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
@@ -73,9 +78,9 @@ std::vector<BoidNode*> FlockNode::get_close_boids(const BoidNode& boid) {
 
 std::vector<BoidNode*> FlockNode::get_visible_boids(const BoidNode& boid) {
     std::vector<BoidNode*> visible_boids;
-    if (boid.is_predator()) {
-        return visible_boids;
-    }
+    // if (boid.is_predator()) {
+    //     return visible_boids;
+    // }
 
     if (quadtree_) {
         auto boid_ptr = &boid;
@@ -145,7 +150,7 @@ void FlockNode::Update(double delta_time) {
                 steer_separation += boid.get_position() - other->get_position();
                 if (other->is_predator()) {
                     predator_delta = boid.get_position() - other->get_position();
-                    steer_separation += params_[8] * predator_delta;
+                    steer_separation += params_[8] * 10 * predator_delta;
                 }
             }
         }
@@ -186,9 +191,9 @@ void FlockNode::Update(double delta_time) {
 
         glm::vec3 new_acc = steer_separation * params_[5] + steer_alignment * params_[3] + steer_cohesion * params_[4] + boundary_turn_acceleration;
 
-        if (boid.is_predator()) {
-            new_acc = boid.get_acceleration();
-        }
+        // if (boid.is_predator()) {
+        //     new_acc = boid.get_acceleration();
+        // }
 
         if (glm::length(new_acc) > params_[7]) {
             new_acc = glm::normalize(new_acc) * params_[7];

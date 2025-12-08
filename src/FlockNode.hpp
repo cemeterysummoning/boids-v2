@@ -38,10 +38,6 @@ class FlockNode : public SceneNode {
         };
 
         void Update(double delta_time) override;
-
-        void UpdateParams();
-        // glm::vec3 lower_bounds_{-10.f, -10.f, -10.f};
-        // glm::vec3 upper_bounds_{10.f, 10.f, 10.f};
         glm::vec3 lower_bounds_{-20.f, -20.f, -20.f};
         glm::vec3 upper_bounds_{20.f, 20.f, 20.f};
         float margin_ = 1.f;
