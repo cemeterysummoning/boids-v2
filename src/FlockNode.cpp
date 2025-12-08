@@ -130,8 +130,7 @@ void FlockNode::Update(double delta_time) {
     }
 
     double avgNeighbors = boids_.empty() ? 0.0 : static_cast<double>(totalNeighbors) / static_cast<double>(boids_.size());
-    std::cout << "avg neighbors: " << avgNeighbors
-              << ", max neighbors: " << maxNeighbors << "\n";
+    
 
 
     for (auto& boid_ptr : boids_) {
@@ -248,6 +247,8 @@ void FlockNode::Update(double delta_time) {
     double updateMs = ms(t1, t2);
     if (buildMs + updateMs > 16.67) {
         std::cout << "Warning: Slow frame! Quadtree build: " << buildMs << " ms, Boid update: " << updateMs << " ms, Total: " << (buildMs + updateMs) << " ms\n";
+        std::cout << "avg neighbors: " << avgNeighbors
+              << ", max neighbors: " << maxNeighbors << "\n";
     }
 
     if (InputManager::GetInstance().IsKeyPressed('W')) {

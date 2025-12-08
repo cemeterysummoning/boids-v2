@@ -133,7 +133,9 @@ public:
             float dist_sq = glm::dot(bpos - boid->get_position(), bpos - boid->get_position());
 
             // check angle
-
+            if (view_angle >= 6.28f) {
+                // full circle, skip angle check
+            } else {
              glm::vec3 to_other = glm::normalize(bpos - boid->get_position());
              glm::vec3 boid_dir = glm::normalize(boid->get_velocity());
              float angle = glm::acos(glm::dot(boid_dir, to_other));
@@ -141,7 +143,9 @@ public:
                  continue;
              }
             
-             if (dist_sq <= radius * radius) {
+            }
+            
+            if (dist_sq <= radius * radius) {
                 found.push_back(other_boid);
             }
         }
